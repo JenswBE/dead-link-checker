@@ -3,4 +3,4 @@ apscheduler==3.7.*
 notifiers==1.2.*
 pydantic==1.8.*
 pyyaml==5.4.*
-requests==2.25.*
+requests==2.27.*
