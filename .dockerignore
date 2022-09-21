@@ -1,0 +1,8 @@
+/.github/
+/.vscode/
+/e2e/
+/.gitignore
+/config.yml
+/Dockerfile
+/LICENSE
+/README.md
