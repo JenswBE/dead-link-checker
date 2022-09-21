@@ -3,8 +3,10 @@ module github.com/JenswBE/dead-link-checker
 go 1.18
 
 require (
+	github.com/adhocore/gronx v0.2.7
+	github.com/containrrr/shoutrrr v0.6.1
 	github.com/gocolly/colly/v2 v2.1.0
-	github.com/google/go-cmp v0.5.8
+	github.com/google/go-cmp v0.5.9
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/rs/zerolog v1.28.0
 	github.com/spf13/pflag v1.0.5
@@ -14,12 +16,10 @@ require (
 
 require (
 	github.com/PuerkitoBio/goquery v1.5.1 // indirect
-	github.com/adhocore/gronx v0.2.7 // indirect
 	github.com/andybalholm/cascadia v1.2.0 // indirect
 	github.com/antchfx/htmlquery v1.2.3 // indirect
 	github.com/antchfx/xmlquery v1.2.4 // indirect
 	github.com/antchfx/xpath v1.1.8 // indirect
-	github.com/containrrr/shoutrrr v0.6.1 // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
