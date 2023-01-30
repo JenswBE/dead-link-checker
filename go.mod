@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/adhocore/gronx v1.1.2
-	github.com/containrrr/shoutrrr v0.6.1
+	github.com/containrrr/shoutrrr v0.7.1
 	// Latest stable release v2.1.0 has security issues.
 	// See e.g. https://github.com/gocolly/colly/issues/581.
 	github.com/gocolly/colly/v2 v2.0.0-20220706081359-947eeead97b3
