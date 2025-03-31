@@ -9,7 +9,7 @@ require (
 	github.com/containrrr/shoutrrr v0.8.0
 	// Latest stable release v2.1.0 has security issues.
 	// See e.g. https://github.com/gocolly/colly/issues/581.
-	github.com/gocolly/colly/v2 v2.0.0-20230517145056-ea4b1dd0e5e6
+	github.com/gocolly/colly/v2 v2.2.0
 	github.com/google/go-cmp v0.7.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/rs/zerolog v1.34.0
