@@ -1,6 +1,6 @@
 # Also update GitHub Actions workflow when bumping
 # Based on https://www.docker.com/blog/faster-multi-platform-builds-dockerfile-cross-compilation-guide/
-FROM --platform=${BUILDPLATFORM} docker.io/library/golang:1.24 AS builder
+FROM --platform=${BUILDPLATFORM} docker.io/library/golang:1.25 AS builder
 WORKDIR /src/
 RUN GOARCH=amd64 go install golang.org/x/vuln/cmd/govulncheck@latest
 COPY . .
