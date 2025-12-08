@@ -5,7 +5,7 @@ go 1.24.1
 require (
 	github.com/adhocore/gronx v1.19.6
 	github.com/containrrr/shoutrrr v0.8.0
-	github.com/gocolly/colly/v2 v2.2.0
+	github.com/gocolly/colly/v2 v2.3.0
 	github.com/google/go-cmp v0.7.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/rs/zerolog v1.34.0
@@ -14,12 +14,12 @@ require (
 )
 
 require (
-	github.com/PuerkitoBio/goquery v1.10.2 // indirect
+	github.com/PuerkitoBio/goquery v1.11.0 // indirect
 	github.com/andybalholm/cascadia v1.3.3 // indirect
-	github.com/antchfx/htmlquery v1.3.4 // indirect
-	github.com/antchfx/xmlquery v1.4.4 // indirect
-	github.com/antchfx/xpath v1.3.3 // indirect
-	github.com/bits-and-blooms/bitset v1.22.0 // indirect
+	github.com/antchfx/htmlquery v1.3.5 // indirect
+	github.com/antchfx/xmlquery v1.5.0 // indirect
+	github.com/antchfx/xpath v1.3.5 // indirect
+	github.com/bits-and-blooms/bitset v1.24.4 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
@@ -39,9 +39,9 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/temoto/robotstxt v1.1.2 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/net v0.42.0 // indirect
-	golang.org/x/sys v0.34.0 // indirect
-	golang.org/x/text v0.28.0 // indirect
+	golang.org/x/net v0.47.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
-	google.golang.org/protobuf v1.36.6 // indirect
+	google.golang.org/protobuf v1.36.10 // indirect
 )
