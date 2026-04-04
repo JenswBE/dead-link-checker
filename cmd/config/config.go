@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"log/slog"
 	"net/url"
 	"regexp"
 
@@ -9,7 +10,6 @@ import (
 	shoutrrrRouter "github.com/containrrr/shoutrrr/pkg/router"
 	shoutrrrTypes "github.com/containrrr/shoutrrr/pkg/types"
 	"github.com/mitchellh/mapstructure"
-	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 )
 
@@ -100,7 +100,7 @@ func ParseConfig(configPath string) (*Config, error) {
 			return nil, fmt.Errorf("failed to parse health check URL '%s': %w", rawConfig.HealthCheck.URL, err)
 		}
 	} else {
-		log.Info().Msg("No health check URL found, disabling health check calling.")
+		slog.Info("No health check URL found, disabling health check calling.")
 	}
 	config.Notifiers = make(map[string]NotifierConfig, len(rawConfig.Notifiers))
 	serviceRouter := &shoutrrrRouter.ServiceRouter{}

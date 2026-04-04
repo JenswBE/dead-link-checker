@@ -4,12 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
-	"time"
 
 	"github.com/adhocore/gronx/pkg/tasker"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	flag "github.com/spf13/pflag"
 
 	"github.com/JenswBE/dead-link-checker/cmd/config"
@@ -26,20 +24,20 @@ func main() {
 	flag.Parse()
 
 	// Setup logging
-	output := zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}
-	log.Logger = log.Output(output)
-	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	logLevel := &slog.LevelVar{}
+	handler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: logLevel})
+	slog.SetDefault(slog.New(handler))
 
 	// Parse config
 	delicConfig, err := config.ParseConfig(*configPath)
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to parse config")
+		slogFatal("Failed to parse config", "error", err)
 	}
 
 	// Setup Debug logging if enabled
 	if delicConfig.Verbose || *verbose {
-		zerolog.SetGlobalLevel(zerolog.DebugLevel)
-		log.Debug().Msg("Debug logging enabled")
+		logLevel.Set(slog.LevelDebug)
+		slog.Debug("Debug logging enabled")
 	}
 
 	// Create manager
@@ -49,11 +47,11 @@ func main() {
 	if delicConfig.Cron == "" || *runNow {
 		// Run once
 		if err = runDeLiC(context.Background(), manager, delicConfig, *printJSON); err != nil {
-			log.Fatal().Err(err).Msg("Error while running DeLiC")
+			slogFatal("Error while running DeLiC", "error", err)
 		}
 	} else {
 		// Run at cron interval
-		log.Info().Str("spec", delicConfig.Cron).Msg("DeLiC started with cron")
+		slog.Info("DeLiC started with cron", "spec", delicConfig.Cron)
 		tasker.
 			New(tasker.Option{Verbose: delicConfig.Verbose}).
 			Task(delicConfig.Cron, newDeLiCTask(manager, delicConfig, *printJSON)).
@@ -71,11 +69,16 @@ func runDeLiC(ctx context.Context, manager *internal.Manager, delicConfig *confi
 		encoder.SetIndent("", "    ")
 		if err := encoder.Encode(reports); err != nil {
 			// Both log and return error to have correct severity in logs
-			log.Error().Err(err).Msg("Failed to print reports as JSON to stdout")
+			slog.Error("Failed to print reports as JSON to stdout", "error", err)
 			return fmt.Errorf("failed to print reports as JSON to stdout: %w", err)
 		}
 	}
 	return nil
+}
+
+func slogFatal(msg string, args ...any) {
+	slog.Error(msg, args...)
+	os.Exit(1)
 }
 
 func newDeLiCTask(manager *internal.Manager, delicConfig *config.Config, printJSON bool) tasker.TaskFunc {
