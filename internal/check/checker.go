@@ -3,6 +3,7 @@ package check
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"regexp"
 	"slices"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/gocolly/colly/v2"
 	"github.com/gocolly/colly/v2/extensions"
-	"github.com/rs/zerolog/log"
 
 	"github.com/JenswBE/dead-link-checker/cmd/config"
 	"github.com/JenswBE/dead-link-checker/internal/record"
@@ -65,7 +65,7 @@ func Run(siteConfig config.SiteConfig, globalIgnoredLinks []*regexp.Regexp, reco
 
 	// Define OnRequest callback
 	collector.OnRequest(func(r *colly.Request) {
-		log.Debug().Msgf("Visiting %v", r.URL)
+		slog.Debug("Visiting", "url", r.URL)
 	})
 
 	// Define OnError callback
@@ -73,25 +73,25 @@ func Run(siteConfig config.SiteConfig, globalIgnoredLinks []*regexp.Regexp, reco
 	collector.OnError(func(r *colly.Response, err error) {
 		// Setup logger
 		linkAbsoluteURL := r.Request.Ctx.Get("link_absolute_url")
-		logger := log.With().
-			Int("status_code", r.StatusCode).
-			Str("link_value", r.Request.Ctx.Get("link_value")).
-			Str("link_absolute_url", linkAbsoluteURL).
-			Str("actual_absolute_url", r.Request.URL.String()).
-			Str("page_url", r.Request.Ctx.Get("page_url")).
-			Str("tag", r.Request.Ctx.Get("tag")).
-			Str("attribute", r.Request.Ctx.Get("attribute")).
-			Str("site_url", siteURL).
-			Logger()
+		logger := slog.With(
+			"status_code", r.StatusCode,
+			"link_value", r.Request.Ctx.Get("link_value"),
+			"link_absolute_url", linkAbsoluteURL,
+			"actual_absolute_url", r.Request.URL.String(),
+			"page_url", r.Request.Ctx.Get("page_url"),
+			"tag", r.Request.Ctx.Get("tag"),
+			"attribute", r.Request.Ctx.Get("attribute"),
+			"site_url", siteURL,
+		)
 
 		// Handle false-positives due to redirection
 		var visitedErr *colly.AlreadyVisitedError
 		if errors.As(err, &visitedErr) {
-			logger.Info().Err(err).Msg("Link already visited, probably due to a redirect. Ignoring ...")
+			logger.Info("Link already visited, probably due to a redirect. Ignoring ...", "error", err)
 			return // Ignore error
 		}
 		if errors.Is(err, colly.ErrForbiddenURL) && strings.Contains(err.Error(), "redirect") {
-			logger.Info().Err(err).Msg("Redirect to ignored link, ignoring ...")
+			logger.Info("Redirect to ignored link, ignoring ...", "error", err)
 			return // Ignore error
 		}
 
@@ -104,7 +104,7 @@ func Run(siteConfig config.SiteConfig, globalIgnoredLinks []*regexp.Regexp, reco
 			},
 		}
 		recorder.RecordBrokenLink(report)
-		logger.Warn().Err(err).Msg("Following link returned error")
+		logger.Warn("Following link returned error", "error", err)
 	})
 
 	// Start initial request
@@ -135,8 +135,7 @@ func handleHTML(collector *colly.Collector, recorder *record.Recorder, tag, attr
 		for attr, attrValues := range tags[tag].ignoreWhenAttributeMatches {
 			attrValue := strings.TrimSpace(e.Attr(attr))
 			if slices.Contains(attrValues, attrValue) {
-				log.Debug().Str("tag", tag).Str("attribute", attr).Str("attribute_value", attrValue).
-					Msg("Link ignored because attribute value is in list to ignore")
+				slog.Debug("Link ignored because attribute value is in list to ignore", "tag", tag, "attribute", attr, "attribute_value", attrValue)
 				return
 			}
 		}
@@ -164,22 +163,20 @@ func handleLinkValue(
 	linkReport record.Link,
 ) {
 	site := e.Request.Ctx.Get("site_url")
-	logger := log.With().Str("site_url", site).Str("link_value", linkValue).Logger()
+	logger := slog.With("site_url", site, "link_value", linkValue)
 	if strings.HasPrefix(linkValue, "#") {
 		// Skip link as it's a hash link to the current page
-		logger.Debug().Str("page_url", e.Request.URL.String()).
-			Msg("Link ignored because it is a hash link to the current page")
+		logger.Debug("Link ignored because it is a hash link to the current page", "page_url", e.Request.URL.String())
 		return
 	}
 	if !strings.HasPrefix(e.Request.URL.String(), site) {
 		// Skip link as we are already on an external site
-		logger.Debug().Str("page_url", e.Request.URL.String()).
-			Msg("Link ignored because we are on an external site")
+		logger.Debug("Link ignored because we are on an external site", "page_url", e.Request.URL.String())
 		return
 	}
 	if hasIgnoredScheme(linkValue) {
 		// Skip link as it has an ignored scheme
-		logger.Debug().Msg("Link ignored because it has an ignored scheme")
+		logger.Debug("Link ignored because it has an ignored scheme")
 		return
 	}
 
@@ -213,8 +210,7 @@ func handleLinkValue(
 	err := collector.Request(http.MethodGet, linkReport.AbsoluteURL, nil, ctxClone, nil)
 	var visitedErr *colly.AlreadyVisitedError
 	if err != nil && !errors.As(err, &visitedErr) && !errors.Is(err, colly.ErrForbiddenURL) {
-		log.Error().Err(err).Str("url", linkReport.AbsoluteURL).Str("method", http.MethodGet).
-			Msg("Failed to send request. Will mark as broken link.")
+		slog.Error("Failed to send request. Will mark as broken link.", "error", err, "url", linkReport.AbsoluteURL, "method", http.MethodGet)
 		recorder.RecordBrokenLink(record.BrokenLink{
 			AbsoluteURL: linkReport.AbsoluteURL,
 			BrokenLinkDetails: record.BrokenLinkDetails{
