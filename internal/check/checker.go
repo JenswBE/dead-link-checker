@@ -202,7 +202,7 @@ func handleLinkValue(
 
 	// Clone context
 	ctxClone := colly.NewContext()
-	e.Request.Ctx.ForEach(func(k string, v interface{}) interface{} {
+	e.Request.Ctx.ForEach(func(k string, v any) any {
 		ctxClone.Put(k, v)
 		return nil
 	})

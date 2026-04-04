@@ -1,15 +1,15 @@
 name: Test, build and publish
 on:
+  pull_request:
   push:
     branches: [main]
-    tags: ["*"]
-  pull_request:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
 
 env:
-  GO_VERSION: "1.26" # Also update Dockerfile when bumping
-  DOCKER_HUB_USER: jenswbebot
   DOCKER_HUB_REPO: jenswbe/dead-link-checker
-  PLATFORMS: linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64
+  DOCKER_HUB_USER: jenswbebot
 
 jobs:
   test:
@@ -18,22 +18,32 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v6
 
-      - name: Derive docker_tag
+      - name: Derive docker tags
         id: vars
         shell: python
         run: |
-          import os
+          import os, re, sys
           tag = os.environ['GITHUB_REF'].split('/').pop()
+          print(f"Tag: {tag}")
+          tags = []
+          semverRegex = r"^v\d+\.\d+\.\d+$"
           if tag == 'main':
-            tag = 'latest'
+            tags = ['latest']
+          elif re.match(semverRegex, tag):
+            tag_parts = tag.split(".")
+            tags = ['stable', tag, tag_parts[0], f"{tag_parts[0]}.{tag_parts[1]}"]
+          else:
+            tags = [f'test-branch-{tag}']
+          tags_list = ",".join(tags)
+          print(f"Tags: {tags_list}")
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
-            output.write(f"docker_tag={tag}{os.linesep}")
+            output.write(f"tags={tags_list}{os.linesep}")
 
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
           check-latest: true
-          go-version: ${{ env.GO_VERSION }}
+          go-version: "1.26"
 
       - name: Pull common linter configs
         run: wget -O .golangci.yml https://raw.githubusercontent.com/JenswBE/setup/main/programming_configs/golang/.golangci.yml
@@ -42,6 +52,11 @@ jobs:
         uses: golangci/golangci-lint-action@v9
         with:
           version: latest
+
+      - name: Ensure all fixes are applied
+        run: |
+          go fix ./...
+          git diff --exit-code
 
       - name: Start E2E services
         working-directory: e2e
@@ -53,30 +68,29 @@ jobs:
         working-directory: e2e
         run: go test --tags e2e ./...
 
-      - name: Set up QEMU
+      - name: Setup Ko
         if: github.event_name == 'push'
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        if: github.event_name == 'push'
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to DockerHub
-        if: github.event_name == 'push'
-        uses: docker/login-action@v3
+        uses: ko-build/setup-ko@v0.9
         with:
-          username: ${{ env.DOCKER_HUB_USER }}
-          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+          version: v0.18.1
+        env:
+          KO_DOCKER_REPO: docker.io/${{ env.DOCKER_HUB_REPO }}
 
-      - name: Build and push
+      - name: Build with Ko
         if: github.event_name == 'push'
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile
-          platforms: ${{ env.PLATFORMS }}
-          push: true
-          tags: ${{ env.DOCKER_HUB_REPO }}:${{ steps.vars.outputs.docker_tag }}
+        env:
+          oci_registry: docker.io
+          oci_auth_user: ${{ env.DOCKER_HUB_USER }}
+          oci_auth_token: ${{ secrets.DOCKER_HUB_PASSWORD }}
+        run: |
+          # Ensure git repo is clean
+          git reset --hard HEAD
+
+          # Login to OCI registry
+          echo "${oci_auth_token:?}" | ko login "${oci_registry:?}" --username "${oci_auth_user:?}" --password-stdin
+
+          # Build image
+          ko build ./cmd --platform=all --tags ${{ steps.vars.outputs.tags }} --bare
 
       - name: Update repo description
         if: github.event_name == 'push'
