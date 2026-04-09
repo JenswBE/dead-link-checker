@@ -57,7 +57,18 @@ sites:
 By default, DeLiC tries to read the config file at `./config.yml`.
 
 ```bash
-docker run -v /path/to/config.yml:/config.yml:ro,z jenswbe/dead-link-checker
+docker run --user "$(id -u):$(id -g)" -v /path/to/config.yml:/config.yml:ro,z jenswbe/dead-link-checker
+```
+
+or with Docker Compose:
+
+```yaml
+services:
+  delic:
+    image: docker.io/jenswbe/dead-link-checker:latest
+    user: "${UID}:${GID}"
+    volumes:
+      - "./config.yml:/config.yml:ro,z"
 ```
 
 ## 3. CLI arguments
