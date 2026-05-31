@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"regexp"
 	"slices"
 	"strings"
@@ -47,6 +48,8 @@ func Run(siteConfig config.SiteConfig, globalIgnoredLinks []*regexp.Regexp, reco
 	// Create collector
 	ignoredLinks := siteConfig.IgnoredLinks
 	ignoredLinks = append(ignoredLinks, globalIgnoredLinks...)
+	siteURL := siteConfig.URL
+	siteURLString := siteURL.String()
 	collector := colly.NewCollector(
 		colly.Async(true),
 		colly.DisallowedURLFilters(ignoredLinks...),
@@ -59,7 +62,7 @@ func Run(siteConfig config.SiteConfig, globalIgnoredLinks []*regexp.Regexp, reco
 	for linkTag, config := range tags {
 		for _, linkAttr := range config.linkAttributes {
 			query := fmt.Sprintf("%s[%s]", linkTag, linkAttr)
-			collector.OnHTML(query, handleHTML(collector, recorder, linkTag, linkAttr))
+			collector.OnHTML(query, handleHTML(collector, recorder, siteURL, linkTag, linkAttr))
 		}
 	}
 
@@ -69,7 +72,6 @@ func Run(siteConfig config.SiteConfig, globalIgnoredLinks []*regexp.Regexp, reco
 	})
 
 	// Define OnError callback
-	siteURL := siteConfig.URL.String()
 	collector.OnError(func(r *colly.Response, err error) {
 		// Setup logger
 		linkAbsoluteURL := r.Request.Ctx.Get("link_absolute_url")
@@ -81,7 +83,7 @@ func Run(siteConfig config.SiteConfig, globalIgnoredLinks []*regexp.Regexp, reco
 			"page_url", r.Request.Ctx.Get("page_url"),
 			"tag", r.Request.Ctx.Get("tag"),
 			"attribute", r.Request.Ctx.Get("attribute"),
-			"site_url", siteURL,
+			"site_url", siteURLString,
 		)
 
 		// Handle false-positives due to redirection
@@ -109,8 +111,8 @@ func Run(siteConfig config.SiteConfig, globalIgnoredLinks []*regexp.Regexp, reco
 
 	// Start initial request
 	ctx := colly.NewContext()
-	ctx.Put("site_url", siteURL)
-	if err := collector.Request(http.MethodGet, siteConfig.URL.String(), nil, ctx, nil); err != nil {
+	ctx.Put("site_url", siteURLString)
+	if err := collector.Request(http.MethodGet, siteURLString, nil, ctx, nil); err != nil {
 		return fmt.Errorf("failed to start collector for site %s: %w", siteConfig.URL, err)
 	}
 
@@ -119,7 +121,7 @@ func Run(siteConfig config.SiteConfig, globalIgnoredLinks []*regexp.Regexp, reco
 	return nil
 }
 
-func handleHTML(collector *colly.Collector, recorder *record.Recorder, tag, attr string) colly.HTMLCallback {
+func handleHTML(collector *colly.Collector, recorder *record.Recorder, siteURL *url.URL, tag, attr string) colly.HTMLCallback {
 	return func(e *colly.HTMLElement) {
 		// Set context
 		e.Request.Ctx.Put("page_url", e.Request.URL.String())
@@ -147,10 +149,10 @@ func handleHTML(collector *colly.Collector, recorder *record.Recorder, tag, attr
 			for _, item := range items {
 				// item is e.g. "/images/example4x.jpg 4x"
 				itemParts := strings.Split(strings.TrimSpace(item), " ")
-				handleLinkValue(collector, recorder, e, itemParts[0], linkReport)
+				handleLinkValue(collector, recorder, siteURL, e, itemParts[0], linkReport)
 			}
 		default:
-			handleLinkValue(collector, recorder, e, e.Attr(attr), linkReport)
+			handleLinkValue(collector, recorder, siteURL, e, e.Attr(attr), linkReport)
 		}
 	}
 }
@@ -158,6 +160,7 @@ func handleHTML(collector *colly.Collector, recorder *record.Recorder, tag, attr
 func handleLinkValue(
 	collector *colly.Collector,
 	recorder *record.Recorder,
+	siteURL *url.URL,
 	e *colly.HTMLElement,
 	linkValue string,
 	linkReport record.Link,
@@ -169,7 +172,7 @@ func handleLinkValue(
 		logger.Debug("Link ignored because it is a hash link to the current page", "page_url", e.Request.URL.String())
 		return
 	}
-	if !strings.HasPrefix(e.Request.URL.String(), site) {
+	if !isSameOrigin(e.Request.URL, siteURL) {
 		// Skip link as we are already on an external site
 		logger.Debug("Link ignored because we are on an external site", "page_url", e.Request.URL.String())
 		return
@@ -228,4 +231,11 @@ func hasIgnoredScheme(linkValue string) bool {
 		}
 	}
 	return false
+}
+
+func isSameOrigin(a, b *url.URL) bool {
+	if a == nil || b == nil {
+		return false
+	}
+	return strings.EqualFold(a.Scheme, b.Scheme) && strings.EqualFold(a.Host, b.Host)
 }

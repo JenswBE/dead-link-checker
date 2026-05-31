@@ -10,10 +10,10 @@
     <p>
       <p><a href="/">Home relative</a></p>
       <p><a href="http://localhost:9080/">Home absolute</a></p>
-  
+
       <p><a href="./not_found.html">404 relative</a></p>
       <p><a href="http://localhost:9080/not_found.html">404 absolute</a></p>
-  
+
       <p><a href="http://localhost:9081">External index</a></p>
       <p><a href="http://localhost:9081/not_found.html">External 404</a></p>
 
@@ -22,11 +22,13 @@
       <p><a href="http://localhost:9080/external_redirect_200">Redirect external index</a></p>
       <p><a href="http://localhost:9080/external_redirect_404">Redirect external 404</a></p>
       <p><a href="http://localhost:9080/ignored_redirect">Redirect ignored</a></p>
-  
+
       <p><a href="mailto:test@example.com">Skip ignored schemes</a></p>
 
       <p><a href="http://localhost:9082/some-page">Skip ignored URL's</a></p>
       <p><a href="http://localhost:9083/some-page">Skip global ignored URL's</a></p>
+
+      <a href="http://localhost:9080@localhost:9081/">Prefix origin boundary check</a>
     </p>
   </body>
 </html>

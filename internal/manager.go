@@ -10,6 +10,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/JenswBE/dead-link-checker/cmd/config"
 	"github.com/JenswBE/dead-link-checker/internal/check"
@@ -17,6 +18,8 @@ import (
 	"github.com/JenswBE/dead-link-checker/internal/report"
 	"github.com/JenswBE/dead-link-checker/reports"
 )
+
+const healthCheckRequestTimeout = 10 * time.Second
 
 type Manager struct {
 	templates *template.Template
@@ -153,7 +156,8 @@ func pingHealthCheckURL(ctx context.Context, u *url.URL) {
 	}
 
 	// Call health check
-	resp, err := http.DefaultClient.Do(req)
+	client := &http.Client{Timeout: healthCheckRequestTimeout}
+	resp, err := client.Do(req)
 	if err != nil {
 		logger.Error("Failed to send GET request to health check URL", "error", err)
 		return
