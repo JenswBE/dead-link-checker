@@ -40,7 +40,7 @@ jobs:
             output.write(f"tags={tags_list}{os.linesep}")
 
       - name: Setup Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           check-latest: true
           go-version: "1.26"
