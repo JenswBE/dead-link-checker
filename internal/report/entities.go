@@ -15,13 +15,11 @@ type SiteReport struct {
 func NewEmptySiteReport(siteURL string) SiteReport {
 	return SiteReport{
 		SiteURL: siteURL,
-		Report: Report{
-			Statistics: Statistics{
-				LinksCountTotal:     0,
-				LinksCountByPageURL: map[string]int{},
-			},
-			BrokenLinksByPageURL: map[string][]BrokenLink{},
+		Statistics: Statistics{
+			LinksCountTotal:     0,
+			LinksCountByPageURL: map[string]int{},
 		},
+		BrokenLinksByPageURL: map[string][]BrokenLink{},
 	}
 }
 
