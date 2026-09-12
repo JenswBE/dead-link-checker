@@ -55,11 +55,9 @@ func (m *Manager) Run(ctx context.Context, c *config.Config) map[string]report.R
 			if err := check.Run(siteConfig, c.IgnoredLinks, recorder); err != nil {
 				slog.Error("Failed to run checker. Will mark as broken link.", "error", err, "site_url", siteConfig.URL.String())
 				recorder.RecordBrokenLink(record.BrokenLink{
-					AbsoluteURL: siteConfig.URL.String(),
-					BrokenLinkDetails: record.BrokenLinkDetails{
-						StatusCode:        0,
-						StatusDescription: "Failed to run checker: " + err.Error(),
-					},
+					AbsoluteURL:       siteConfig.URL.String(),
+					StatusCode:        0,
+					StatusDescription: "Failed to run checker: " + err.Error(),
 				})
 			}
 			recording := recorder.Stop()

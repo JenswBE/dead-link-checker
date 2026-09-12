@@ -87,8 +87,7 @@ func Run(siteConfig config.SiteConfig, globalIgnoredLinks []*regexp.Regexp, reco
 		)
 
 		// Handle false-positives due to redirection
-		var visitedErr *colly.AlreadyVisitedError
-		if errors.As(err, &visitedErr) {
+		if _, ok := errors.AsType[*colly.AlreadyVisitedError](err); ok {
 			logger.Info("Link already visited, probably due to a redirect. Ignoring ...", "error", err)
 			return // Ignore error
 		}
@@ -99,11 +98,9 @@ func Run(siteConfig config.SiteConfig, globalIgnoredLinks []*regexp.Regexp, reco
 
 		// Report broken link
 		report := record.BrokenLink{
-			AbsoluteURL: linkAbsoluteURL,
-			BrokenLinkDetails: record.BrokenLinkDetails{
-				StatusCode:        r.StatusCode,
-				StatusDescription: err.Error(),
-			},
+			AbsoluteURL:       linkAbsoluteURL,
+			StatusCode:        r.StatusCode,
+			StatusDescription: err.Error(),
 		}
 		recorder.RecordBrokenLink(report)
 		logger.Warn("Following link returned error", "error", err)
@@ -215,11 +212,9 @@ func handleLinkValue(
 	if err != nil && !errors.As(err, &visitedErr) && !errors.Is(err, colly.ErrForbiddenURL) {
 		slog.Error("Failed to send request. Will mark as broken link.", "error", err, "url", linkReport.AbsoluteURL, "method", http.MethodGet)
 		recorder.RecordBrokenLink(record.BrokenLink{
-			AbsoluteURL: linkReport.AbsoluteURL,
-			BrokenLinkDetails: record.BrokenLinkDetails{
-				StatusCode:        0,
-				StatusDescription: "Failed to create request: " + err.Error(),
-			},
+			AbsoluteURL:       linkReport.AbsoluteURL,
+			StatusCode:        0,
+			StatusDescription: "Failed to create request: " + err.Error(),
 		})
 	}
 }

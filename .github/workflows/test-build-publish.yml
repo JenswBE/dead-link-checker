@@ -43,7 +43,7 @@ jobs:
         uses: actions/setup-go@v7
         with:
           check-latest: true
-          go-version: "1.26"
+          go-version: "1.27"
 
       - name: Pull common linter configs
         run: wget -O .golangci.yml https://raw.githubusercontent.com/JenswBE/setup/main/programming_configs/golang/.golangci.yml
