@@ -1,19 +1,25 @@
 version: 2
 updates:
   # Maintain dependencies for GitHub Actions
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: github-actions
+    directory: /
     schedule:
-      interval: "weekly"
+      interval: daily
+    cooldown:
+      semver-patch-days: 3
 
   # Maintain dependencies for Golang
-  - package-ecosystem: "gomod"
-    directory: "/"
+  - package-ecosystem: gomod
+    directory: /
     schedule:
-      interval: "weekly"
+      interval: daily
+    cooldown:
+      semver-patch-days: 3
 
   # Maintain dependencies for Docker
-  - package-ecosystem: "docker"
-    directory: "/"
+  - package-ecosystem: docker
+    directory: /
     schedule:
-      interval: "weekly"
+      interval: weekly
+    cooldown:
+      semver-patch-days: 3
